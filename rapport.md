@@ -15,6 +15,7 @@
   - #### [**b) - Master Worker**](#p2b)
 - ### [III - Algorithme et parallélisation](#p3)
     - #### [**a) - Analyse de Assignment102.java**](#p3a)
+    - #### [**b) - Analyse de Pi.java**](#p3b)
   <br><br><br>
 
 ---
