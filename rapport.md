@@ -15,6 +15,7 @@
   - #### [**b) - Master Worker**](#p2b)
 - ### [III - Algorithme et parallélisation](#p3)
     - #### [**a) - Analyse de `Assignment102.java`**](#p3a)
+    - #### [**b) - Analyse de `Pi.java`**](#p3b)
 - ### [IV - Qualité de test de performance](#p4)
     - #### [**a) - Définition scalabilité forte et scalabilité faible**](#p4a)
     - #### [**b) Réalisation des tests de scalabilité sur `Assignment102.java`**](#p4b)
@@ -450,7 +451,32 @@ Si on exécute le code de `Pi.java` avec le jeu de tests utilisé pour la scalab
 sur ce graphique on peut voir en rouge la courbe optimale de scalabilité forte et en bleu la courbe de scalabilité forte de `Pi.java`.
 Sur cette courbe on remarque que l'évolution de la scabilité est constante jusqu'à 8 processus mais qu'au delà elle stagne voir décrois, cela peut s'expliquer par le nombre de de coeur physique du processeur qui est de 8 docn au delà il passe en hyperthreading ce qui ne permet pas une nette amélioration des performance.
 
-<img src=images_rapport\courbe_scalabilite_faible_pi.png alt="courbe de scalabilite faible de Pi.java" style="width:50%;"> <br><small><small>*Courbe de scalabilite faible d'pi.java*</small></small></img>
+<img src=images_rapport\courbe_scalabilite_faible_pi.png alt="courbe de scalabilite faible de Pi.java" style="width:50%;"> <br><small><small>*Courbe de scalabilite faible de pi.java*</small></small></img>
 
 sur ce graphique on peut voir en rouge la courbe optimale de scalabilité faible et en bleu la courbe de scalabilité faible de `Pi.java`.
 On remarque que la courbe décroit assez lentement, on passe de 1 avec un seul processus à 0.84 avec 16 ce qui est positif si on compare ces résultat avec ceux d' `Assignment102.java`, on peut donc en conclure que `Pi.java` a une bonne scalabilité faible.
+
+---
+## <a name="p5"></a> V - Mise en oeuvre mémoire distribuée :
+
+Dans cette partie on va étudier une réalisation de l'agorithme de Monte-Carlo pour calculer Pi en mémoire distribuée avec le paradigme **Master Worker**, pour cela on va étudier deux code java : `MasterSocket.java`, qui va jouer le rôle de Master et `WorkerSocket.java`, qu va jouer le rôle de Worker.
+
+Pour commencer on va réaliser un diagramme de classe UML pour comprendre les différentes rellations entre les classes : <br>
+
+<img src=images_rapport\diagramme_UML_Socket.png alt="diagramme de classe UML de `MasterSocket.java` et de `WorkerSocket.java`" style="width:50%;"> <br><small><small>*diagramme de classe UML de `MasterSocket.java` et de `WorkerSocket.java`*</small></small></img>
+
+**Liste des rellations**
+
+
+| **Relation**                          | **Type**                | **Exemple dans le Code**                                           |
+|---------------------------------------|-------------------------|---------------------------------------------------------------------|
+| `MasterSocket → WorkerSocket`         | **Dépendance (via réseau)** | `MasterSocket` envoie des commandes à `WorkerSocket` à travers les `Socket`. |
+| `MasterSocket → Socket`               | **Agrégation**          | `MasterSocket` gère un tableau de `Socket` pour communiquer avec les Workers (`sockets[]`). |
+| `WorkerSocket → Socket`               | **Composition**         | `WorkerSocket` utilise un `Socket` pour établir et maintenir une connexion réseau. |
+| `Socket → PrintWriter / BufferedReader` | **Dépendance**          | `Socket` fournit des flux (`getOutputStream`, `getInputStream`) nécessaires à `PrintWriter` et `BufferedReader`. |
+| `MasterSocket → PrintWriter`          | **Association**         | `MasterSocket` utilise `PrintWriter` pour envoyer des données aux Workers (`writer[i]`). |
+| `MasterSocket → BufferedReader`       | **Association**         | `MasterSocket` utilise `BufferedReader` pour lire les réponses des Workers (`reader[i]`). |
+| `WorkerSocket → PrintWriter`          | **Association**         | `WorkerSocket` utilise `PrintWriter` pour envoyer des messages au Master (`pWrite`). |
+| `WorkerSocket → BufferedReader`       | **Association**         | `WorkerSocket` utilise `BufferedReader` pour lire les commandes provenant du Master (`bRead`). |
+
+Ce code utilise le paradigme **Master Worker** comme `Pi.java` dans la partie [3.b](#p3b). La seul différence est l'utisation d'une version en mémoire distribuée. Chacun des Worker est un serveur sur lequel va s'exécuter un problème de petite taille, ce serveur peut être sur la même machine que le Master ou bien sur une autre machine à laquelle le Master va pouvoir y connecter un worker via *SSH*.
