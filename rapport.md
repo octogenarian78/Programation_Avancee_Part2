@@ -14,8 +14,13 @@
   - #### [**a) - Itération parallèle**](#p2a)
   - #### [**b) - Master Worker**](#p2b)
 - ### [III - Algorithme et parallélisation](#p3)
-    - #### [**a) - Analyse de Assignment102.java**](#p3a)
-    - #### [**b) - Analyse de Pi.java**](#p3b)
+    - #### [**a) - Analyse de `Assignment102.java`**](#p3a)
+- ### [IV - Qualité de test de performance](#p4)
+    - #### [**a) - Définition scalabilité forte et scalabilité faible**](#p4a)
+    - #### [**b) Réalisation des tests de scalabilité sur `Assignment102.java`**](#p4b)
+        - ##### [**1) - Modification du code `Assignment102.java`**](#p4b1)
+        - ##### [**2) Création d'un script python qui lance automatiquement les codes java**](#p4b2)
+        - #### [**3) Test de performance de `Assignment102.java`**](#p4b3)
   <br><br><br>
 
 ---
@@ -198,7 +203,7 @@ Pour mieux comprendre les liens entre les classes on a réalisé un diagramme de
 
 Sur ce diagramme UML on peut voir que `Assignment102` qui dépend de `PiMonteCarlo`, on a `MonteCarlo` qui compose `PiMonteCarlo`, on a `MonteCarlo` qui réalise l'interface `Runnable`.<br>
 
-`Assignment102.java` utilise le parallelisme iteratif comme proposé dans la partie `II.a`.<br>
+`Assignment102.java` utilise le parallelisme iteratif comme proposé dans la partie [`II.a`](#p2a).<br>
 Le problème de `Assignment102.java` est la ressource critique `nAtomSuccess` qui est de type `AtomicInteger`, ce qui veux dire que la valeur ne peut être manipulée que par une tache à la fois ce qui fait que dans le cas actuel si on verifie que que le point choisi aléatoirement est bien dans le quart de disque alors 75% de l'exécution se fait en itératif, une améloiration envisageable serai de verifier si le point choisi aléatoirement n'est pas dans le quart de disque comme ça seulement 25% de l'exécution serai en iteratif
 
 ### <a name="p3b"></a> b) - Analyse de `Pi.java` :
@@ -208,5 +213,244 @@ Afin de mieux se représenter ce programme on va réaliser un diagramme de class
 
 <img src=images_rapport\diagramme_UML_Pi.png alt="diagramme du code Pi.java" style="width:50%;"> <br><small><small>*Diagramme de classe de Pi*</small></small></img>
 
-Comme dit précédemment `Pi.java` utilise le paradigme de programmation **Master Worker**, comme proposé dans la partie `II.b`.<br>
+Comme dit précédemment `Pi.java` utilise le paradigme de programmation **Master Worker**, comme proposé dans la partie [`II.b`](#p2b).<br>
 Avec l'utilisation du paradigme de programmation **Master Worker** on évite le problème de la ressouce critique, car chaques taches possèdent sont propre compteur, donc aucune ressource critique.
+
+---
+## <a name="p4"></a> IV - Qualité de test de performance :
+
+Cette partie va traiter de la mise en place et de la réalisation de tests de performance comme vu dans le cours de qualité de développement.<br>
+Tous les programme et les différentes informations dans cette partie se trouverons sur la branche [test_de_scalabilite](https://github.com/octogenarian78/Programation_Avancee_Part2/tree/test_de_scalabilite) du github.<br>
+
+L'ordinateur sur lequel vont être réalisées les test possède les specification suivantes : 
+
+ * AMD Ryzen 7 5700U
+ * 8 coeurs physiques
+ * 16 coeurs logiques
+
+<br>
+
+On va étudier la performance des deux programme java analysés précédemment, pour on va étudier la **scalabilité forte** et **faible**.<br>
+
+### <a name="p4a"></a> a) - Définition **scalabilité forte** et **scalabilité faible** :
+
+Avant de continuer on va définir les termes de **scalabilité forte** et de **scalabilité faible** :
+- **scalabilité forte** : On fixe une taille de problème et on augmente le nombre de processus.
+- **scalabilité faible** : On fixe la taille du problème par processus et on augmente le nombre de
+processus, la taille du problème augmente proportionellement au nombre de processus.
+
+### <a name="p4b"></a>  b) - Réalisation des tests de scalabilité sur `Assignment102.java` : 
+
+
+#### <a name="p4b1"></a>1) - Modification du code `Assignment102.java` :
+Avant de pourvoir réaliser les test sur `Assignment102.java`, il va faloir faire deux chose : modifier le code de `Assignment102.java` pour pouvoir le lancer en changeant ses parametre avec une commande et créer un programme python qui nous lance autotiquement des exécution de `Assignment102.java` en modfiant ses parametre.<br>
+
+Pour faire en sorte que `Assignment102.java` soit lanceable  depuis une ligne de commande il faut modifier la fonction `main()` de la classe `Assignment102` : 
+
+```java
+public class Assignment102 {
+    public static void main(String[] args) {
+        PiMonteCarlo PiVal = new PiMonteCarlo(100000);
+        long startTime = System.currentTimeMillis();
+        double value = PiVal.getPi();
+        long stopTime = System.currentTimeMillis();
+```
+dans la version ci-dessus qui est la version originale de la fonction `main()` de la classe `Assignment102` on peut voir que tous les parametre utilisés par le programme y sont directement définis ce qui nous empèche de les modfier si on cherche à lancer le programme via une ligne de commande, alors que dans le programme ci-dessous on utilise le parametre de `String[] args` qui est une liste de chaines de caractères qui peut être entrer en paramètre de la fonction. Le premier élément de la liste `args` va être le nombre d'iteration à réaliser, c'est à dire la taille de notre problème, le second argument est le nombre de worker, c'est à dire le nombre de processus que l'on va utiliser.
+
+```java
+public class Assignment102 {
+    public static void main(String[] args) {
+        long numIteration = Long.parseLong(args[0]);
+        PiMonteCarlo PiVal = new PiMonteCarlo(numIteration);
+        int numworker = Integer.parseInt(args[1]);
+        long startTime = System.currentTimeMillis();
+        double value = PiVal.getPi();
+        long stopTime = System.currentTimeMillis();
+```
+
+pour pouvoir stocker les différentes données liées à l'exécution de ce programme on va créer une classe java qui va enregistrer dans un fichier csv : 
+
+```java
+    WriteToFile writeToFile = new WriteToFile();
+        writeToFile.write(numIteration,numworker,(stopTime - startTime),value,(value - Math.PI),args[2]);
+```
+ce bout de code va être ajouter à la fin de la fonction `main()` de la classe `Assignment102` et va prendre en parametre la taille du problème, le nombre de processus utilisé, le temps de réalisation du problème, la valeur estimé de pi, la différence de cette valeur par rapport à la vrai valeur de pi et le troisième élément de la liste `args` qui sera le nom du fichier csv.
+
+
+#### <a name="p4b2"></a>2) - Création d'un script python qui lance automatiquement les codes java :
+Une fois toutes ces modifications faites, on peut passer à la création d'un fichier python qui va nous lancer automatiquement `Assignment102.java` en changeant les paramètres de la méthode `main()`.<br>
+Pour l'automatisation de l'exécution on va utiliser les bibliothèques python `subprocess`, pour compiler le fichier java et pour exécuterla commande qui lance le code java, `os`, utilisé pour récupérer le nom de la classe principale de notre programme java par exemple dans `Assignment102.java` la classe principale est la classe `Assignment102`, et `Cython`, pour pouvoir créer des valeur de type `long`.
+
+**Fonctionement du fichier python :**
+
+ 1) On donne les information importante au script python
+ ```python
+ if __name__ == "__main__":
+    java_file = "Assignment102.java"  # Remplacez par le nom de votre fichier Java
+    num_throws = 1_000_000# Nombre de lancers pour la simulation Monte Carlo
+    max_worker = 16 # Nombre maximum de Worker
+ ```
+ 2) ensuite on lance l'exécution des tests
+
+```python
+    for num_workers in range(1, max_worker+1):  # De 1 à 16 workers
+        print(f"\n=== Test de {java_file} avec {num_workers} workers ===")
+        results = run_java_program(java_file, long(num_throws * num_workers), num_workers, "Assignment102_faible")
+        if results:
+            results_by_workers[num_workers] = results
+```
+
+3) puis dnas la fonction `run_java_program` on compile le code java
+```python
+def run_java_program(java_file, num_throws, num_workers, name_file):
+    # Compiler le fichier Java
+    compile_command = ["javac", java_file]
+    print(f"Compilation de {java_file}...")
+    try:
+        subprocess.run(compile_command, check=True)
+        print("Compilation réussie.")
+    except subprocess.CalledProcessError as e:
+        print("Erreur lors de la compilation :", e)
+        return None
+```
+
+4) enfin on lance la commande et on démarre les tests
+```python
+# Extraire le nom de la classe principale (en supposant qu'il correspond au nom du fichier sans l'extension .java)
+    class_name = os.path.splitext(java_file)[0]
+
+    # Stocker les résultats
+    results = []
+
+    # Exécuter le programme Java 5 fois pour le nombre de workers donné
+    for i in range(5):
+        run_command = ["java", class_name, str(num_throws), str(num_workers), name_file]
+        print(f"Exécution du programme Java (tentative {i + 1}, workers : {num_workers})...")
+        try:
+            result = subprocess.run(run_command, capture_output=True, text=True, check=True)
+            print("Sortie :")
+            print(result.stdout)
+            results.append(result.stdout.strip())  # Sauvegarder la sortie
+        except subprocess.CalledProcessError as e:
+            print("Erreur lors de l'exécution :", e)
+            if e.stdout:
+                print("Sortie standard :")
+                print(e.stdout)
+            if e.stderr:
+                print("Sortie des erreurs :")
+                print(e.stderr)
+    return results
+```
+#### <a name="p4b3"></a> 3) Test de performance de `Assignment102.java` :
+
+**Scalabilité forte :**<br>
+Comme dit plus tôt la scalabilité forte consiste en un problème de taille fixe pour lequel on va augmenter le nombre de processus, pour éviter qu'il n'y ait pas toujours exactement la même portion de taile de problème pour les tests en fonction du nombre de processus on va choisir un nombre qui est multiple de tous les nombre infèrieur ou égaux à, dans notre cas, 16. Si on veux trouver ce nombre, il nous faut trouver le PPCM (plus petit commun multiple) des nombre infèrieur ou égaux à 16, et donc après quelque calcule on trouve que le PPCM de ces nombres est 720720.
+
+voici le tableau des valeur utilisé pour l'experience de scalabilité forte de `Assignment102.java`:
+
+| Nombre de processus | taille du problème | taille du problème pour chaque processus |
+| -- | -- | --|
+| 1 | 7207200 | 7207200 |
+| 2 | 7207200 | 3603600 |
+| 3 | 7207200 | 2402400 |
+| 4 | 7207200 | 1801800 |
+| 5 | 7207200 | 1441440 |
+| 6 | 7207200 | 1201200 |
+| 7 | 7207200 | 1029600 |
+| 8 | 7207200 | 900900 |
+| 9 | 7207200 | 800800 |
+| 10 | 7207200 | 720720 |
+| 11 | 7207200 | 655200 |
+| 12 | 7207200 | 600600 |
+| 13 | 7207200 | 554400 |
+| 14 | 7207200 | 514800 |
+| 15 | 7207200 | 480480 |
+| 16 | 7207200 | 450450 |
+
+si on exécute donc notre code java avec ce jeu de test on obtien la courbe de scalabilité forte suivante : 
+
+<img src=images_rapport\courbe_scalabilite_forte_assignment102.png alt="courbe de scalabilite forte d'assignment102.java" style="width:50%;"> <br><small><small>*Courbe de scalabilite forte d'assignment102.java*</small></small></img>
+
+sur ce graphique on peut voir en rouge la courbe optimale de scalabilité forte et en bleu la courbe de scalabilité forte de `Assignment102.java`. On remarque que la courbe de `Assignment102.java` ne correspond pas du tout à la courbe optimale, ce qui veux dire que `Assignment102.java` à une mauvaise scalabilité forte, ce qui peut être dû à plusieur facteurs comme le `AtomicInteger` qui rend le code trop séquentiel et donc qui annule les effets positifs de la parallélisation.
+
+**Scalabilité faible :**<br>
+Comme plus tôt la scalabilité faible consiste en un problème dont la taille augment proportionellement au nombre de processus.
+
+voici le tableau des valeur utilisé pour l'experience de scalabilité forte de `Assignment102.java`:
+
+| Nombre de processus | taille du problème | taille du problème pour chaque processus |
+| -- | -- | --|
+| 1 | 1000000 | 1000000 |
+| 2 | 2000000 | 1000000 |
+| 3 | 3000000 | 1000000 |
+| 4 | 4000000 | 1000000 |
+| 5 | 5000000 | 1000000 |
+| 6 | 6000000 | 1000000 |
+| 7 | 7000000 | 1000000 |
+| 8 | 8000000 | 1000000 |
+| 9 | 9000000 | 1000000 |
+| 10 | 10000000 | 1000000 |
+| 11| 11000000 | 1000000 |
+| 12 | 12000000 | 1000000 |
+| 13 | 13000000 | 1000000 |
+| 14 | 14000000 | 1000000 |
+| 15 | 15000000 | 1000000 |
+| 16 | 16000000 | 1000000 |
+
+si on exécute donc notre code java avec ce jeu de test on obtien la courbe de scalabilité forte suivante : 
+
+<img src=images_rapport\courbe_scalabilite_faible_assignment102.png alt="courbe de scalabilite faible d'assignment102.java" style="width:50%;"> <br><small><small>*Courbe de scalabilite faible d'assignment102.java*</small></small></img>
+
+sur ce graphique on à en rouge la courbe optimale pour la scalabilité faible et en bleu la courbe de scalabilité faible de `Assignment102.java`.
+Encore une fois on remarque que la coubre de `Assignment102.java` ne suit pas du tout la courbe optimale ce qui nous montre que `Assignment102.java` a une mauvaise scalabilié faible, on dirait même que la courbe descent de proportionellement au nombre de coeur, donc aussi proportionellement à la taille du problème, ce qui peut nous indiquer tout comme la courbe de scalabilité forte que l'ajout de processus n'a aucun impacte sur les performance du programe `Assignment102.java`.
+
+
+### <a name="p4c"></a>  c) - Réalisation des tests de scalabilité sur `Pi.java` : 
+
+#### <a name="p4c1"></a>1) - Modification du code `Pi.java` :
+
+```java
+public class Pi 
+{
+    public static void main(String[] args) throws Exception 
+    {
+        long total=0;
+        total = new Master().doRun(50000, 10);
+        System.out.println("total from Master = " + total);
+    }
+}
+```
+
+On peut voir ci-dessus l'ancienne de `Pi.java` qui n'était pas encore exécutable à l'aide d'une commande tout en modifiant ces parametre, alors que la version ci-dessous est une version modifier de la même façon que la version modifier de `Assignment102.java` ce qui lui permet donc d'être lancer avec le script python créer précédemment.
+
+```java
+public class Pi
+{
+    public static void main(String[] args) throws Exception
+    {
+        long total=0;
+        long numIterations = Long.parseLong(args[0]);
+        int numWorkers = Integer.parseInt(args[1]);
+        total = new Master().doRun(numIterations, numWorkers,args[2]);
+        System.out.println("total from Master = " + total);
+    }
+}
+```
+
+#### <a name="p4c2"></a> 3) Test de performance de `Pi.java` :
+
+Pour réaliser les tests de performance de `Pi.java`, on va utiliser les même jeux de tests, donc si vous voulez les revoir je vous invite à revoir la partie [**Test de performance de `Assignment102.java`**](#p4b3).
+
+**Scalabilité forte :**<br>
+
+Si on exécute le code de `Pi.java` avec le jeu de tests utilisé pour la scalabilité forte on obtien cette courbe : 
+
+<img src=images_rapport\courbe_scalabilite_forte_pi.png alt="courbe de scalabilite forte de Pi.java" style="width:50%;"> <br><small><small>*Courbe de scalabilite forte d'pi.java*</small></small></img>
+
+sur ce graphique on peut voir en rouge la courbe optimale de scalabilité forte et en bleu la courbe de scalabilité forte de `Pi.java`.
+Sur cette courbe on remarque que l'évolution de la scabilité est constante jusqu'à 8 processus mais qu'au delà elle stagne voir décrois, cela peut s'expliquer par le nombre de de coeur physique du processeur qui est de 8 docn au delà il passe en hyperthreading ce qui ne permet pas une nette amélioration des performance.
+
+<img src=images_rapport\courbe_scalabilite_faible_pi.png alt="courbe de scalabilite faible de Pi.java" style="width:50%;"> <br><small><small>*Courbe de scalabilite faible d'pi.java*</small></small></img>
+
+sur ce graphique on peut voir en rouge la courbe optimale de scalabilité faible et en bleu la courbe de scalabilité faible de `Pi.java`.
+On remarque que la courbe décroit assez lentement, on passe de 1 avec un seul processus à 0.84 avec 16 ce qui est positif si on compare ces résultat avec ceux d' `Assignment102.java`, on peut donc en conclure que `Pi.java` a une bonne scalabilité faible.
