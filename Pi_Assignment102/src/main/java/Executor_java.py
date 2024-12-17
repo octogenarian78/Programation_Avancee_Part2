@@ -21,7 +21,7 @@ def run_java_program(java_file, num_throws, num_workers, name_file):
     results = []
 
     # Exécuter le programme Java 5 fois pour le nombre de workers donné
-    for i in range(5):
+    for i in range(15):
         run_command = ["java", class_name, str(num_throws), str(num_workers), name_file]
         print(f"Exécution du programme Java (tentative {i + 1}, workers : {num_workers})...")
         try:
@@ -40,21 +40,26 @@ def run_java_program(java_file, num_throws, num_workers, name_file):
     return results
 
 if __name__ == "__main__":
-    java_file = "Pi.java"  # Remplacez par le nom de votre fichier Java
-    num_throws = 720720000# Nombre de lancers pour la simulation Monte Carlo
+    java_file = "Assignment102.java"  # Remplacez par le nom de votre fichier Java
+    num_throws = 1000000# Nombre de lancers pour la simulation Monte Carlo
     max_worker = 16 # Nombre maximum de Worker
     results_by_workers = {}
 
-    # Tester le programme avec un nombre de workers allant de 1 à 16
-    for num_workers in range(1, max_worker+1):  # De 1 à 16 workers
-        print(f"\n=== Test de {java_file} avec {num_workers} workers ===")
-        results = run_java_program(java_file, long(num_throws / num_workers), num_workers, "Assignment102_forte")
-        if results:
-            results_by_workers[num_workers] = results
+    # # Tester le programme avec un nombre de workers allant de 1 à 16
+    # for num_workers in range(1, max_worker+1):  # De 1 à 16 workers
+    #     print(f"\n=== Test de {java_file} avec {num_workers} workers ===")
+    #     results = run_java_program(java_file, long(num_throws/num_workers), num_workers, "Pi_forte")
+    #     if results:
+    #         results_by_workers[num_workers] = results
+    #
+    # # Résumé des résultats
+    # print("\n=== Résumé des résultats ===")
+    # for workers, results in results_by_workers.items():
+    #     print(f"Workers : {workers}")
+    #     for i, output in enumerate(results):
+    #         print(f"  Exécution {i + 1} : {output}")
 
-    # Résumé des résultats
-    print("\n=== Résumé des résultats ===")
-    for workers, results in results_by_workers.items():
-        print(f"Workers : {workers}")
-        for i, output in enumerate(results):
-            print(f"  Exécution {i + 1} : {output}")
+
+    while num_throws <= 10000000:
+      run_java_program(java_file, long(num_throws*max_worker), max_worker, "error_Assigment102")
+      num_throws += 1000000

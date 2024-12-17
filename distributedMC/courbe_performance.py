@@ -14,7 +14,7 @@ idr = 0
 repeat_count = 5  # Nombre de répétitions par configuration
 
 # Lecture du fichier CSV
-with open('Pi_forte.csv', newline='') as csvfile:
+with open('Socket_faible.csv', newline='') as csvfile:
     file = csv.reader(csvfile, delimiter=';')
     for row in file:
         if row[0] != 'totalIterations':  # Ignorer l'en-tête
@@ -37,7 +37,7 @@ with open('Pi_forte.csv', newline='') as csvfile:
 
 spdu = []# Temps d'exécution avec 1 travailleur
 for i in range(len(temps)):
-    spdu.append( (temps[0]/numworker[i]  - temps[i]) / temps[i])
+    spdu.append((temps[0]/temps[i]))
 
 # Afficher les données pour vérification
 print("Iterations:", iteration)
@@ -48,8 +48,8 @@ print("Erreur:", error)
 
 # Générer le graphique
 plt.plot(numworker, spdu, marker='o')
-plt.plot(numworker,numworker)
-plt.title("Courbe de scalabilité faible Pi avec t_t/t_a")
+plt.plot(numworker,[1]*len(numworker))
+plt.title("Courbe de scalabilité faible en mémoire distribuée")
 plt.xlabel("Nombre de workers")
 plt.ylabel("Speedup")
 plt.grid(True)

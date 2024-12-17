@@ -15,6 +15,7 @@
   - #### [**b) - Master Worker**](#p2b)
 - ### [III - Algorithme et parallélisation](#p3)
     - #### [**a) - Analyse de `Assignment102.java`**](#p3a)
+    - #### [**b) - Analyse de `Pi.java`**](#p3b)
 - ### [IV - Qualité de test de performance](#p4)
     - #### [**a) - Définition scalabilité forte et scalabilité faible**](#p4a)
     - #### [**b) Réalisation des tests de scalabilité sur `Assignment102.java`**](#p4b)
@@ -220,7 +221,7 @@ Avec l'utilisation du paradigme de programmation **Master Worker** on évite le 
 ## <a name="p4"></a> IV - Qualité de test de performance :
 
 Cette partie va traiter de la mise en place et de la réalisation de tests de performance comme vu dans le cours de qualité de développement.<br>
-Tous les programme et les différentes informations dans cette partie se trouverons sur la branche [test_de_scalabilite]() du github.<br>
+Tous les programme et les différentes informations dans cette partie se trouverons sur la branche [test_de_scalabilite](https://github.com/octogenarian78/Programation_Avancee_Part2/tree/test_de_scalabilite) du github.<br>
 
 L'ordinateur sur lequel vont être réalisées les test possède les specification suivantes : 
 
@@ -249,11 +250,11 @@ Pour faire en sorte que `Assignment102.java` soit lanceable  depuis une ligne de
 
 ```java
 public class Assignment102 {
-	public static void main(String[] args) {
-		PiMonteCarlo PiVal = new PiMonteCarlo(100000);
-		long startTime = System.currentTimeMillis();
-		double value = PiVal.getPi();
-		long stopTime = System.currentTimeMillis();
+    public static void main(String[] args) {
+        PiMonteCarlo PiVal = new PiMonteCarlo(100000);
+        long startTime = System.currentTimeMillis();
+        double value = PiVal.getPi();
+        long stopTime = System.currentTimeMillis();
 ```
 dans la version ci-dessus qui est la version originale de la fonction `main()` de la classe `Assignment102` on peut voir que tous les parametre utilisés par le programme y sont directement définis ce qui nous empèche de les modfier si on cherche à lancer le programme via une ligne de commande, alors que dans le programme ci-dessous on utilise le parametre de `String[] args` qui est une liste de chaines de caractères qui peut être entrer en paramètre de la fonction. Le premier élément de la liste `args` va être le nombre d'iteration à réaliser, c'est à dire la taille de notre problème, le second argument est le nombre de worker, c'est à dire le nombre de processus que l'on va utiliser.
 
@@ -374,7 +375,7 @@ si on exécute donc notre code java avec ce jeu de test on obtien la courbe de s
 sur ce graphique on peut voir en rouge la courbe optimale de scalabilité forte et en bleu la courbe de scalabilité forte de `Assignment102.java`. On remarque que la courbe de `Assignment102.java` ne correspond pas du tout à la courbe optimale, ce qui veux dire que `Assignment102.java` à une mauvaise scalabilité forte, ce qui peut être dû à plusieur facteurs comme le `AtomicInteger` qui rend le code trop séquentiel et donc qui annule les effets positifs de la parallélisation.
 
 **Scalabilité faible :**<br>
-Comme plus tôt la scalabilité faible consiste en un problème dont la taille augment proportionellement au nombre de processus.
+Comme plus tôt la scalabilité faible consiste en un problème dont la taille augmente proportionellement au nombre de processus.
 
 voici le tableau des valeur utilisé pour l'experience de scalabilité forte de `Assignment102.java`:
 
@@ -414,9 +415,9 @@ public class Pi
 {
     public static void main(String[] args) throws Exception 
     {
-	    long total=0;
-	    total = new Master().doRun(50000, 10);
-	    System.out.println("total from Master = " + total);
+        long total=0;
+        total = new Master().doRun(50000, 10);
+        System.out.println("total from Master = " + total);
     }
 }
 ```
@@ -450,7 +451,90 @@ Si on exécute le code de `Pi.java` avec le jeu de tests utilisé pour la scalab
 sur ce graphique on peut voir en rouge la courbe optimale de scalabilité forte et en bleu la courbe de scalabilité forte de `Pi.java`.
 Sur cette courbe on remarque que l'évolution de la scabilité est constante jusqu'à 8 processus mais qu'au delà elle stagne voir décrois, cela peut s'expliquer par le nombre de de coeur physique du processeur qui est de 8 docn au delà il passe en hyperthreading ce qui ne permet pas une nette amélioration des performance.
 
-<img src=images_rapport\courbe_scalabilite_faible_pi.png alt="courbe de scalabilite faible de Pi.java" style="width:50%;"> <br><small><small>*Courbe de scalabilite faible d'pi.java*</small></small></img>
+<img src=images_rapport\courbe_scalabilite_faible_pi.png alt="courbe de scalabilite faible de Pi.java" style="width:50%;"> <br><small><small>*Courbe de scalabilite faible de pi.java*</small></small></img>
 
 sur ce graphique on peut voir en rouge la courbe optimale de scalabilité faible et en bleu la courbe de scalabilité faible de `Pi.java`.
 On remarque que la courbe décroit assez lentement, on passe de 1 avec un seul processus à 0.84 avec 16 ce qui est positif si on compare ces résultat avec ceux d' `Assignment102.java`, on peut donc en conclure que `Pi.java` a une bonne scalabilité faible.
+
+---
+## <a name="p5"></a> V - Mise en oeuvre mémoire distribuée :
+
+Dans cette partie on va étudier une réalisation de l'agorithme de Monte-Carlo pour calculer Pi en mémoire distribuée avec le paradigme **Master Worker**, pour cela on va étudier deux code java : `MasterSocket.java`, qui va jouer le rôle de Master et `WorkerSocket.java`, qu va jouer le rôle de Worker.
+
+Pour commencer on va réaliser un diagramme de classe UML pour comprendre les différentes rellations entre les classes : <br>
+
+<img src=images_rapport\diagramme_UML_Socket.png alt="diagramme de classe UML de `MasterSocket.java` et de `WorkerSocket.java`" style="width:50%;"> <br><small><small>*diagramme de classe UML de `MasterSocket.java` et de `WorkerSocket.java`*</small></small></img>
+
+**Liste des rellations**
+
+
+| **Relation**                          | **Type**                | **Exemple dans le Code**                                           |
+|---------------------------------------|-------------------------|---------------------------------------------------------------------|
+| `MasterSocket → WorkerSocket`         | **Dépendance (via réseau)** | `MasterSocket` envoie des commandes à `WorkerSocket` à travers les `Socket`. |
+| `MasterSocket → Socket`               | **Agrégation**          | `MasterSocket` gère un tableau de `Socket` pour communiquer avec les Workers (`sockets[]`). |
+| `WorkerSocket → Socket`               | **Composition**         | `WorkerSocket` utilise un `Socket` pour établir et maintenir une connexion réseau. |
+| `Socket → PrintWriter / BufferedReader` | **Dépendance**          | `Socket` fournit des flux (`getOutputStream`, `getInputStream`) nécessaires à `PrintWriter` et `BufferedReader`. |
+| `MasterSocket → PrintWriter`          | **Association**         | `MasterSocket` utilise `PrintWriter` pour envoyer des données aux Workers (`writer[i]`). |
+| `MasterSocket → BufferedReader`       | **Association**         | `MasterSocket` utilise `BufferedReader` pour lire les réponses des Workers (`reader[i]`). |
+| `WorkerSocket → PrintWriter`          | **Association**         | `WorkerSocket` utilise `PrintWriter` pour envoyer des messages au Master (`pWrite`). |
+| `WorkerSocket → BufferedReader`       | **Association**         | `WorkerSocket` utilise `BufferedReader` pour lire les commandes provenant du Master (`bRead`). |
+
+Ce code utilise le paradigme **Master Worker** comme `Pi.java` dans la partie [3.b](#p3b). La seul différence est l'utisation d'une version en mémoire distribuée. Chacun des Worker est un serveur sur lequel va s'exécuter un problème de petite taille, ce serveur peut être sur la même machine que le Master ou bien sur une autre machine à laquelle le Master va pouvoir y connecter un worker via *SSH*.
+
+---
+## <a name="p6"></a> VI - Calcul de performance en mémoire distribuée :
+
+Dans cette partie on va calculer la scalabilité forte et la scabilité faible de l'algorithme de MonteCarlo en mémoire distribuée avec les codes `MasterSocket.java` et `WorkerSocket.java`.<br>
+Pour réaliser ces tests de scabilité on va utiliser les même tableau que pour les tests de scabilité de `Assignment102.java` et `Pi.java`.<br>
+
+On obtien donc les courbes suivantes :<br>
+
+<img src=images_rapport\courbe_scalabilite_forte_memoir_distribuee.png alt="courbe scalabilité forte memoire distriuée" style="width:50%;"> <br><small><small>*courbe de scalabilité forte en memoire distriuée*</small></small></img>
+
+<img src=images_rapport\courbe_scalabilite_faible_memoir_distribuee.png alt="courbe scalabilité faible memoire distriuée" style="width:50%;"> <br><small><small>*courbe de scalabilité faible en memoire distriuée*</small></small></img>
+
+On remarque que ces deux courbe ressemble à celles de `Pi.java` ce qui est logique car les deux programe utilisent le paradigme **Master Worker**.
+
+Si on veux pouvoir vraiment tester les performance de ce code en memoire distribuée il faut essayer de le lancer sur plusieures machine en même temps, cette experience a été réalisée en cours de Programmation Avancée en salle G24 :
+
+Voici le tableau des tests réalisés pour cette experience : 
+
+| Machine | forte | faible | Processus |
+|---------|-------|--------|-----------|
+| 1 | 192e6 | 16e6 | 4 |
+| 2 | 192e6 | 32e6 | 8 |
+| 3 | 192e6 | 48e6 | 12 |
+| 4 | 192e6 | 64e6 | 16 |
+| 5 | | | 20 |
+| 6 | 192e6 | 96e6 | 24 |
+| 7 | | | 28 |
+| 8 | 192e6 | 128e6 | 32 |
+| 9 | | | 36 |
+| 10 | | | 40 |
+| 11 | | | 44|
+| 12 | 192e6 | valeur manquante | 48 |
+
+on va donc pouvoir tester notre code sur 12 et 48 processus.<br>
+Un fois l'experience réalisée on obtien les courbes suivantes : 
+
+<img src=images_rapport\scalabilite_forte_memoire_distribuee.png alt="courbe scalabilité forte memoire distriuée sur plusieures machines" style="width:50%;"> <br><small><small>*courbe de scalabilité forte en memoire distriuée sur plusieures machines*</small></small></img>
+
+<img src=images_rapport\scalabilite_faible_memoire_distribuee.png alt="courbe scalabilité faible memoire distriuée sur plusieures machines" style="width:50%;"> <br><small><small>*courbe de scalabilité faible en memoire distriuée sur plusieures machines*</small></small></img>
+
+on remarque que les deux courbes sont presque parfaites ce qui montre que le code en mémoire distribuée à une exélente scabilité faible et forte
+
+---
+## <a name="p7"></a> VII - calcul d'erreur :
+
+Dans cette partie on va étudier le bon fonctionnement du programme en termes de respet du résultat attendu, dans notre cas on va analyser l'erreur, c'est à dire la différence entre Pi et la valeur envouer par nos différents programe java en fonction du nombre de points choisi aléatoirement.
+
+Pour cela on va générer des nuages de points pour chacun des programme java et regarder si la moyenne de l'erreur diminue si on augmente le nombre de points, voici donc les résultats :
+
+<img src=images_rapport\nuage_point_erreur_assignment102.png alt="nuage depoint d'erreur de Assignment102.java" style="width:50%;"> <br><small><small>*nuage depoint d'erreur de Assignment102.java*</small></small></img>
+
+
+<img src=images_rapport\nuage_point_erreur_pi.png alt="nuage depoint d'erreur de Pi.java" style="width:50%;"> <br><small><small>*nuage depoint d'erreur de Pi.java*</small></small></img>
+
+
+Les deux figures ci-dessus représentent des nuages de points avec en bleu, les points des tirages alléatoires et en rouge la moyenne en fonction du nombre de tirages.<br>
+On remarque que pour ``Assignment102.java`` et ``Pi.java`` la moyenne de l'erreur diminue bien si on augmente le nombre de points, ce qui veux dire que les deux programe font bien ce pourquoi ils ont étés créer, c'est à dire calcul une valeur approcher de Pi.

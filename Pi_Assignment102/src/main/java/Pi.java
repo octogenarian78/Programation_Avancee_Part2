@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -28,8 +29,7 @@ public class Pi
  * and aggregates the results.
  */
 class Master {
-    public long doRun(long totalCount, int numWorkers, String filename) throws InterruptedException, ExecutionException
-    {
+    public long doRun(long totalCount, int numWorkers, String filename) throws InterruptedException, ExecutionException, IOException {
 
         long startTime = System.currentTimeMillis();
 
@@ -65,7 +65,7 @@ class Master {
 
         //System.out.println( (Math.abs((pi - Math.PI)) / Math.PI) +" "+ totalCount*numWorkers +" "+ numWorkers +" "+ (stopTime - startTime));
         WriteToFile writeToFile = new WriteToFile();
-        writeToFile.write(totalCount*numWorkers,numWorkers,(stopTime - startTime),pi,(Math.abs((pi - Math.PI)) / Math.PI),filename);
+        writeToFile.write(totalCount*numWorkers,numWorkers,(stopTime - startTime),pi,(Math.abs((pi - Math.PI))),filename);
         exec.shutdown();
         return total;
     }
